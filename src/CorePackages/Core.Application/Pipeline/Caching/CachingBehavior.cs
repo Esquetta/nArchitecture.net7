@@ -31,7 +31,7 @@ namespace Core.Application.Pipeline.Caching
                 TimeSpan? slidingExpiration = request.SlidingExpiration ?? TimeSpan.FromDays(cacheSettings.SlidingExpiration);
                 DistributedCacheEntryOptions cacheOptions = new() { SlidingExpiration = slidingExpiration };
                 byte[] seriliazeData = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(response));
-                await cache.SetAsync(request.CacheKey, seriliazeData, cacheOptions);
+                await cache.SetAsync(request.CacheKey, seriliazeData, cacheOptions,cancellationToken);
                 return response;
             }
 
