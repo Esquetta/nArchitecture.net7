@@ -30,6 +30,8 @@ namespace Core.Persistance.Repositories
         T Add(T entity);
         T Update(T entity);
         T Delete(T entity);
-        
+        List<T> DeleteRange(List<T> entity);
+        List<T> UpdateRange(List<T> entity);
+        List<T> AddRange(List<T> entity);
     }
 }

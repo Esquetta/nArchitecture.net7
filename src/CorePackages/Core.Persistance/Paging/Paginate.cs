@@ -1,33 +1,23 @@
-﻿using Core.Persistance.Paging;
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Core.Persistance.Paging
+﻿namespace Core.Persistance.Paging
 {
     public class Paginate<T> : IPaginate<T>
     {
-
-        internal Paginate(IEnumerable<T> source, int index, int size, int from)
+        public Paginate(IEnumerable<T> source, int index, int size, int from)
         {
             var enumerable = source as T[] ?? source.ToArray();
 
             if (from > index)
                 throw new ArgumentException($"indexFrom: {from} > pageIndex: {index}, must indexFrom <= pageIndex");
 
-            if (source is IQueryable<T> quearyable)
+            if (source is IQueryable<T> queryable)
             {
                 Index = index;
                 Size = size;
                 From = from;
-                Count = quearyable.Count();
+                Count = queryable.Count();
                 Pages = (int)Math.Ceiling(Count / (double)Size);
 
-                Items = quearyable.Skip((Index - From) * Size).Take(Size).ToList();
+                Items = queryable.Skip((Index - From) * Size).Take(Size).ToList();
             }
             else
             {
@@ -37,14 +27,15 @@ namespace Core.Persistance.Paging
 
                 Count = enumerable.Count();
                 Pages = (int)Math.Ceiling(Count / (double)Size);
+
                 Items = enumerable.Skip((Index - From) * Size).Take(Size).ToList();
             }
         }
-        internal Paginate()
-        {
-            Items = new T[0];
-        }
 
+        public Paginate()
+        {
+            Items = Array.Empty<T>();
+        }
 
         public int From { get; set; }
         public int Index { get; set; }
@@ -55,79 +46,82 @@ namespace Core.Persistance.Paging
         public bool HasPrevious => Index - From > 0;
         public bool HasNext => Index - From + 1 < Pages;
     }
-}
-internal class Paginate<TSource, TResult> : IPaginate<TResult>
-{
-    public Paginate(IEnumerable<TSource> source, Func<IEnumerable<TSource>, IEnumerable<TResult>> converter,
-        int index, int size, int from)
+
+    public class Paginate<TSource, TResult> : IPaginate<TResult>
     {
-        var enumerable = source as TSource[] ?? source.ToArray();
-
-        if (from > index) throw new ArgumentException($"From: {from} > Index: {index}, must From <= Index");
-
-        if (source is IQueryable<TSource> queryable)
+        public Paginate(IEnumerable<TSource> source, Func<IEnumerable<TSource>, IEnumerable<TResult>> converter,
+                        int index, int size, int from)
         {
-            Index = index;
-            Size = size;
-            From = from;
-            Count = queryable.Count();
-            Pages = (int)Math.Ceiling(Count / (double)Size);
+            var enumerable = source as TSource[] ?? source.ToArray();
 
-            var items = queryable.Skip((Index - From) * Size).Take(Size).ToArray();
+            if (from > index) throw new ArgumentException($"From: {from} > Index: {index}, must From <= Index");
 
-            Items = new List<TResult>(converter(items));
+            if (source is IQueryable<TSource> queryable)
+            {
+                Index = index;
+                Size = size;
+                From = from;
+                Count = queryable.Count();
+                Pages = (int)Math.Ceiling(Count / (double)Size);
+
+                var items = queryable.Skip((Index - From) * Size).Take(Size).ToArray();
+
+                Items = new List<TResult>(converter(items));
+            }
+            else
+            {
+                Index = index;
+                Size = size;
+                From = from;
+                Count = enumerable.Count();
+                Pages = (int)Math.Ceiling(Count / (double)Size);
+
+                var items = enumerable.Skip((Index - From) * Size).Take(Size).ToArray();
+
+                Items = new List<TResult>(converter(items));
+            }
         }
-        else
+
+
+        public Paginate(IPaginate<TSource> source, Func<IEnumerable<TSource>, IEnumerable<TResult>> converter)
         {
-            Index = index;
-            Size = size;
-            From = from;
-            Count = enumerable.Count();
-            Pages = (int)Math.Ceiling(Count / (double)Size);
+            Index = source.Index;
+            Size = source.Size;
+            From = source.From;
+            Count = source.Count;
+            Pages = source.Pages;
 
-            var items = enumerable.Skip((Index - From) * Size).Take(Size).ToArray();
-
-            Items = new List<TResult>(converter(items));
+            Items = new List<TResult>(converter(source.Items));
         }
 
+        public int Index { get; }
 
-    }
-    public Paginate(IPaginate<TSource> source, Func<IEnumerable<TSource>, IEnumerable<TResult>> converter)
-    {
-        Index = source.Index;
-        Size = source.Size;
-        From = source.From;
-        Count = source.Count;
-        Pages = source.Pages;
+        public int Size { get; }
 
-        Items = new List<TResult>(converter(source.Items));
-    }
-    public int Index { get; }
+        public int Count { get; }
 
-    public int Size { get; }
+        public int Pages { get; }
 
-    public int Count { get; }
+        public int From { get; }
 
-    public int Pages { get; }
+        public IList<TResult> Items { get; }
 
-    public int From { get; }
+        public bool HasPrevious => Index - From > 0;
 
-    public IList<TResult> Items { get; }
-
-    public bool HasPrevious => Index - From > 0;
-
-    public bool HasNext => Index - From + 1 < Pages;
-}
-public static class Paginate
-{
-    public static IPaginate<T> Empty<T>()
-    {
-        return new Paginate<T>();
+        public bool HasNext => Index - From + 1 < Pages;
     }
 
-    public static IPaginate<TResult> From<TResult, TSource>(IPaginate<TSource> source,
-                                                            Func<IEnumerable<TSource>, IEnumerable<TResult>> converter)
+    public static class Paginate
     {
-        return new Paginate<TSource, TResult>(source, converter);
+        public static IPaginate<T> Empty<T>()
+        {
+            return new Paginate<T>();
+        }
+
+        public static IPaginate<TResult> From<TResult, TSource>(IPaginate<TSource> source,
+                                                                    Func<IEnumerable<TSource>, IEnumerable<TResult>> converter)
+        {
+            return new Paginate<TSource, TResult>(source, converter);
+        }
     }
 }

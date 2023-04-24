@@ -2,12 +2,7 @@
 using Core.Persistance.Paging;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Query;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Core.Persistance.Repositories
 {
@@ -15,15 +10,15 @@ namespace Core.Persistance.Repositories
         where TEntity : Entity
         where TContext : DbContext
     {
-        protected TContext context { get; }
+        protected TContext Context { get; }
         public EFRepositoryBase(TContext context)
         {
-            this.context = context;
+            this.Context = context;
         }
 
         public async Task<TEntity?> GetAsync(Expression<Func<TEntity, bool>> predicate)
         {
-            return await context.Set<TEntity>().FirstOrDefaultAsync(predicate);
+            return await Context.Set<TEntity>().FirstOrDefaultAsync(predicate);
         }
 
         public async Task<IPaginate<TEntity>> GetListAsync(Expression<Func<TEntity, bool>>? predicate = null, Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null, Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>>? include = null, int index = 0, int size = 10, bool enableTracking = true, CancellationToken cancellationToken = default)
@@ -47,33 +42,33 @@ namespace Core.Persistance.Repositories
 
         public async Task<TEntity> AddAsync(TEntity entity)
         {
-            context.Entry(entity).State = EntityState.Added;
-            await context.SaveChangesAsync();
+            Context.Entry(entity).State = EntityState.Added;
+            await Context.SaveChangesAsync();
             return entity;
         }
 
         public async Task<TEntity> UpdateAsync(TEntity entity)
         {
-            context.Entry(entity).State = EntityState.Modified;
-            await context.SaveChangesAsync();
+            Context.Entry(entity).State = EntityState.Modified;
+            await Context.SaveChangesAsync();
             return entity;
         }
 
         public async Task<TEntity> DeleteAsync(TEntity entity)
         {
-            context.Entry(entity).State = EntityState.Deleted;
-            await context.SaveChangesAsync();
+            Context.Entry(entity).State = EntityState.Deleted;
+            await Context.SaveChangesAsync();
             return entity;
         }
 
         public IQueryable<TEntity> Query()
         {
-            return context.Set<TEntity>();
+            return Context.Set<TEntity>();
         }
 
         public TEntity Get(Expression<Func<TEntity, bool>>? predicate = null)
         {
-            return context.Set<TEntity>().FirstOrDefault(predicate);
+            return Context.Set<TEntity>().FirstOrDefault(predicate);
         }
 
         public IPaginate<TEntity> GetList(Expression<Func<TEntity, bool>>? predicate = null, Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null, Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>>? include = null, int index = 0, int size = 10, bool enableTracking = true)
@@ -97,22 +92,73 @@ namespace Core.Persistance.Repositories
 
         public TEntity Add(TEntity entity)
         {
-            context.Entry(entity).State = EntityState.Added;
-            context.SaveChanges();
+            Context.Entry(entity).State = EntityState.Added;
+            Context.SaveChanges();
             return entity;
         }
 
         public TEntity Update(TEntity entity)
         {
-            context.Entry(entity).State = EntityState.Modified;
-            context.SaveChanges();
+            Context.Entry(entity).State = EntityState.Modified;
+            Context.SaveChanges();
             return entity;
         }
 
         public TEntity Delete(TEntity entity)
         {
-            context.Entry(entity).State = EntityState.Deleted;
-            context.SaveChanges();
+            Context.Entry(entity).State = EntityState.Deleted;
+            Context.SaveChanges();
+            return entity;
+        }
+
+        public async Task<List<TEntity>> DeleteRangeAsync(List<TEntity> entity)
+        {
+            foreach (TEntity entityItem in entity)
+            {
+                Context.Entry(entityItem).State = EntityState.Deleted;
+            }
+            await Context.SaveChangesAsync();
+            return entity;
+        }
+
+        public async Task<List<TEntity>> UpdateRangeAsync(List<TEntity> entity)
+        {
+            foreach (TEntity entityItem in entity)
+            {
+                Context.Entry(entityItem).State = EntityState.Modified;
+            }
+            await Context.SaveChangesAsync();
+            return entity;
+        }
+
+        public async Task<List<TEntity>> AddRangeAsync(List<TEntity> entity)
+        {
+            foreach (TEntity entityItem in entity)
+            {
+                Context.Entry(entityItem).State = EntityState.Added;
+            }
+            await Context.SaveChangesAsync();
+            return entity;
+        }
+
+        public List<TEntity> DeleteRange(List<TEntity> entity)
+        {
+            Context.RemoveRange(entity);
+            Context.SaveChanges();
+            return entity;
+        }
+
+        public List<TEntity> UpdateRange(List<TEntity> entity)
+        {
+            Context.UpdateRange(entity);
+            Context.SaveChanges();
+            return entity;
+        }
+
+        public List<TEntity> AddRange(List<TEntity> entity)
+        {
+            Context.AddRange(entity);
+            Context.SaveChanges();
             return entity;
         }
     }
